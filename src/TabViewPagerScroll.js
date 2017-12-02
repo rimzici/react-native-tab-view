@@ -26,6 +26,10 @@ export default class TabViewPagerScroll<T: *> extends React.Component<
 > {
   static propTypes = PagerRendererPropType;
 
+  static defaultProps = {
+    canJumpToTab: () => true,
+  };
+
   constructor(props: Props<T>) {
     super(props);
 
@@ -41,7 +45,6 @@ export default class TabViewPagerScroll<T: *> extends React.Component<
 
   componentDidMount() {
     this._setInitialPage();
-    this._resetListener = this.props.subscribe('reset', this._scrollTo);
   }
 
   componentDidUpdate(prevProps: Props<T>) {
@@ -60,12 +63,7 @@ export default class TabViewPagerScroll<T: *> extends React.Component<
     }
   }
 
-  componentWillUnmount() {
-    this._resetListener && this._resetListener.remove();
-  }
-
   _scrollView: ?ScrollView;
-  _resetListener: Object;
   _currentOffset: ?number;
   _isIdleCallback: any;
   _isIdle: boolean = true;
@@ -97,10 +95,17 @@ export default class TabViewPagerScroll<T: *> extends React.Component<
   };
 
   _handleMomentumScrollEnd = (e: ScrollEvent) => {
-    const nextIndex = Math.round(
+    let nextIndex = Math.round(
       e.nativeEvent.contentOffset.x / this.props.layout.width
     );
     this._isIdle = true;
+
+    if (
+      !this.props.canJumpToTab(this.props.navigationState.routes[nextIndex])
+    ) {
+      nextIndex = this.props.navigationState.index;
+    }
+
     this.props.jumpToIndex(nextIndex);
   };
 
